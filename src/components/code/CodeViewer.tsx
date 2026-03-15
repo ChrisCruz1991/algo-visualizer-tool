@@ -3,32 +3,41 @@
 import { useEffect, useRef } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import type { SupportedLanguage, LineMap } from "@/engine/types";
+
+const SYNTAX_LANGUAGE_MAP: Record<SupportedLanguage, string> = {
+  typescript: "typescript",
+  python: "python",
+  java: "java",
+  cpp: "cpp",
+};
 
 type Props = {
   code: string;
-  highlightedLines: number[];
+  language: SupportedLanguage;
+  lineMap: LineMap;
+  stepLabel?: string;
 };
 
-export default function CodeViewer({ code, highlightedLines }: Props) {
+export default function CodeViewer({ code, language, lineMap, stepLabel }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const activeLines = stepLabel ? (lineMap[stepLabel] ?? []) : [];
 
   useEffect(() => {
-    if (highlightedLines.length === 0 || !containerRef.current) return;
-    const lineNumber = highlightedLines[0];
-    // react-syntax-highlighter renders lines as spans; approximate scroll by line height
+    if (activeLines.length === 0 || !containerRef.current) return;
+    const lineNumber = activeLines[0];
     const lineHeight = 22; // px, matches the pre style
     const container = containerRef.current;
     const target = (lineNumber - 1) * lineHeight;
     const containerHeight = container.clientHeight;
     const currentScroll = container.scrollTop;
-    // Only scroll if the line is outside the visible area
     if (
       target < currentScroll ||
       target > currentScroll + containerHeight - lineHeight * 3
     ) {
       container.scrollTo({ top: Math.max(0, target - containerHeight / 2), behavior: "smooth" });
     }
-  }, [highlightedLines]);
+  }, [activeLines]);
 
   return (
     <div
@@ -37,12 +46,12 @@ export default function CodeViewer({ code, highlightedLines }: Props) {
       style={{ background: "#1e1e1e" }}
     >
       <SyntaxHighlighter
-        language="typescript"
+        language={SYNTAX_LANGUAGE_MAP[language]}
         style={vscDarkPlus}
         showLineNumbers
         wrapLines
         lineProps={(lineNumber) => {
-          const isHighlighted = highlightedLines.includes(lineNumber);
+          const isHighlighted = activeLines.includes(lineNumber);
           return {
             style: {
               display: "block",

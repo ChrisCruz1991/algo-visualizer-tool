@@ -11,7 +11,7 @@ import MetricsBar from "@/components/visualizer/MetricsBar";
 
 type Props = {
   algorithm: TreeModule;
-  onHighlightedLinesChange?: (lines: number[]) => void;
+  onHighlightedLinesChange?: (lines: number[], stepLabel?: string) => void;
 };
 
 const TRAVERSAL_LABELS: Record<string, string> = {
@@ -45,7 +45,10 @@ export default function TreeVisualizerTab({
 
   // Sync highlighted lines to parent (for CodeTab)
   useEffect(() => {
-    onHighlightedLinesChange?.(engine.currentStep?.highlightedLines ?? []);
+    onHighlightedLinesChange?.(
+      engine.currentStep?.highlightedLines ?? [],
+      engine.currentStep?.stepLabel
+    );
   }, [engine.currentStep, onHighlightedLinesChange]);
 
   const currentStep = engine.currentStep as TreeStep | null;

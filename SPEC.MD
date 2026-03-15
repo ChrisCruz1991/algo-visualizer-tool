@@ -36,6 +36,8 @@ A web application designed to help computer science students learn and understan
 
 > **v2:** BFS, DFS, Tree traversals (inorder, preorder, postorder). Dijkstra, A\*, and Bellman-Ford are deferred to v3.
 
+> **Multi-language code display** (TypeScript, Python, JavaScript, C++) is a cross-cutting feature that applies to all versions — see the Multi-Language Code Display section.
+
 ---
 
 ## Application Layout
@@ -118,11 +120,18 @@ Live counters displayed during execution:
 
 #### Tab 2: Code
 
-- Displays the full algorithm implementation in **TypeScript**
-- A highlighted line (yellow background) tracks which line of code corresponds to the current execution step
-- Code highlighting is driven by the same step-engine that powers the visualizer — they are in sync
-- Syntax highlighting via a lightweight library (e.g. `highlight.js` or `shiki`)
+- Displays the full algorithm implementation in the **currently selected language** (TypeScript, Python, Java, or C++)
+- A **language selector** (tab strip or dropdown) sits at the top of the Code panel, allowing the user to switch languages at any time — including mid-visualization
+- A highlighted line (yellow background) tracks which line corresponds to the current execution step, and updates correctly across all languages
+- Code highlighting is driven by the same step-engine that powers the visualizer — they are always in sync regardless of language
+- Syntax highlighting via `shiki` (preferred — supports all four target languages with fine-grained token control)
 - Code is read-only and non-editable
+- Line numbers are displayed and always visible so the highlight indicator is unambiguous
+
+**Language selector behavior:**
+- Switching language during a paused visualization immediately re-renders the code in the new language and re-applies the current highlighted line
+- Switching language during live playback re-renders without interrupting the animation
+- The selected language persists across algorithm selections for the session (stored in React context or `localStorage`)
 
 ---
 
@@ -184,17 +193,25 @@ type SortStep = {
 Each algorithm module exports a consistent shape:
 
 ```typescript
+type SupportedLanguage = "typescript" | "python" | "java" | "cpp";
+
+type CodeEntry = {
+  code: string;          // Full source string for display
+  lineCount: number;     // Total number of lines (for scroll height calculation)
+};
+
 type AlgorithmModule = {
   id: string;                   // e.g. "bubble-sort"
   name: string;                 // e.g. "Bubble Sort"
   category: "sorting" | "searching";
   description: AlgorithmInfo;   // Info tab content
   complexity: ComplexityTable;  // Big-O table data
-  code: string;                 // TypeScript source as a string (for display)
-  codeLineCount: number;
+  codeByLanguage: Record<SupportedLanguage, CodeEntry>;  // One entry per language
   generator: (input: number[], target?: number) => Generator<SortStep | SearchStep>;
 };
 ```
+
+The generator always runs in TypeScript (it drives the visualizer engine). The `codeByLanguage` map is purely for display — the step engine's `highlightedLines` values must be kept in sync with each language's line numbering separately (see Multi-Language Code Display section).
 
 All algorithms live under `src/algorithms/` with one file per algorithm.
 
@@ -257,6 +274,200 @@ The `algorithmId` param drives which module is loaded and which sidebar item is 
 - **Live benchmark timings are misleading at small sizes.** Do not display `ms` execution time for arrays under ~1,000 elements. The Big-O table is sufficient for v1.
 - **Binary Search requires a sorted input.** The UI should auto-sort the input array before running Binary Search and display a notice: _"Binary Search requires a sorted array. Input has been sorted."_
 - **Speed slider lower bound.** Set minimum animation speed at 50ms per step to prevent rendering from being skipped by the browser.
+
+---
+
+## Multi-Language Code Display
+
+This is a **cross-cutting feature** that applies to every algorithm and data structure across all versions (v1, v2, v3). Every algorithm's Code tab displays implementations in four languages: **TypeScript**, **Python**, **Java**, and **C++**.
+
+---
+
+### Supported Languages & Style Conventions
+
+| Language | Display Label | Style Convention |
+|---|---|---|
+| TypeScript | `TypeScript` | Procedural functions with explicit types |
+| Python | `Python` | Procedural functions, PEP 8 style |
+| Java | `Java` | Class-based — all algorithms wrapped in a class |
+| C++ | `C++` | Class-based — algorithms as class methods; STL used where appropriate |
+
+**Java and C++ use classes.** This is intentional and educationally valuable — students learning Java or C++ will encounter class-based code in every real codebase and textbook. TypeScript and Python use standalone functions, which is idiomatic for those languages. The class structure for Java and C++ is consistent across all algorithms to reduce cognitive overhead when switching between them.
+
+---
+
+### Class Structure Conventions
+
+#### Java
+
+Every algorithm is a `public class` named after the algorithm in PascalCase. Sorting and searching algorithms operate on `int[]`. Linked list operations are implemented as a full `LinkedList<T>` generic class with an inner `Node<T>` class.
+
+```java
+// Sorting example
+public class BubbleSort {
+    public static void sort(int[] arr) {
+        int n = arr.length;
+        for (int i = 0; i < n - 1; i++) {
+            for (int j = 0; j < n - i - 1; j++) {
+                if (arr[j] > arr[j + 1]) {
+                    int temp = arr[j];
+                    arr[j] = arr[j + 1];
+                    arr[j + 1] = temp;
+                }
+            }
+        }
+    }
+}
+
+// Linked list example
+public class LinkedList<T> {
+    private static class Node<T> {
+        T value;
+        Node<T> next;
+        Node(T value) { this.value = value; this.next = null; }
+    }
+    private Node<T> head;
+
+    public void insertAtHead(T value) { ... }
+    public void insertAtTail(T value) { ... }
+    public void delete(T value) { ... }
+    public void reverse() { ... }
+}
+```
+
+#### C++
+
+Every algorithm is a `class` or `struct` in a named namespace. Sorting and searching use `std::vector<int>` passed by reference. Linked lists are a full template class with an inner `Node<T>` struct. STL containers (`std::queue`, `std::stack`) are used in graph/tree implementations.
+
+```cpp
+// Sorting example
+#include <vector>
+using namespace std;
+
+class BubbleSort {
+public:
+    static void sort(vector<int>& arr) {
+        int n = arr.size();
+        for (int i = 0; i < n - 1; i++) {
+            for (int j = 0; j < n - i - 1; j++) {
+                if (arr[j] > arr[j + 1]) {
+                    swap(arr[j], arr[j + 1]);
+                }
+            }
+        }
+    }
+};
+
+// Linked list example
+template <typename T>
+class LinkedList {
+private:
+    struct Node {
+        T value;
+        Node* next;
+        Node(T val) : value(val), next(nullptr) {}
+    };
+    Node* head;
+public:
+    LinkedList() : head(nullptr) {}
+    void insertAtHead(T value) { ... }
+    void insertAtTail(T value) { ... }
+    void remove(T value) { ... }
+    void reverse() { ... }
+};
+```
+
+---
+
+### Line Number Mapping Per Language
+
+The step engine's `highlightedLines` field contains an array of line numbers. Since each language has a different line count for the same algorithm (Python is typically shortest, Java and C++ longest due to boilerplate), each language's code entry stores its own line map alongside the source string.
+
+```typescript
+type LineMap = {
+  // Maps a logical step label to the line numbers active in this language
+  [stepLabel: string]: number[];
+};
+
+type CodeEntry = {
+  code: string;          // Full source string for display
+  lineCount: number;     // Total lines (for scroll area sizing)
+  lineMap: LineMap;      // Step label → line numbers for this language
+};
+```
+
+The generator yields a `stepLabel` string (e.g. `"compare"`, `"swap"`, `"advance-pointer"`) instead of raw line numbers. The `CodeViewer` component looks up the current step label in the active language's `lineMap` to determine which lines to highlight. This decouples the generator from any specific language's line numbering.
+
+```typescript
+// Generator yields a label, not raw line numbers
+yield {
+  array: [...arr],
+  comparingIndices: [j, j + 1],
+  stepLabel: "compare",   // ← language-agnostic label
+  description: `Comparing index ${j} and ${j + 1}`,
+  comparisons,
+  swaps,
+};
+
+// CodeViewer resolves lines at render time
+const activeLines = currentModule
+  .codeByLanguage[selectedLanguage]
+  .lineMap[currentStep.stepLabel] ?? [];
+```
+
+This architecture means adding a new language in the future only requires adding a new `CodeEntry` with a `lineMap` — the generator and visualizer need no changes.
+
+---
+
+### `CodeViewer` Component
+
+The `CodeViewer` component is responsible for all code display concerns:
+
+```
+<CodeViewer>
+  <LanguageSelector />        // TypeScript | Python | Java | C++ tab strip
+  <CodeDisplay>
+    <LineNumbers />            // Fixed-width gutter, always visible
+    <SyntaxHighlightedCode />  // shiki-rendered token output
+    <LineHighlightOverlay />   // Absolutely positioned yellow band over active lines
+  </CodeDisplay>
+</CodeViewer>
+```
+
+**Implementation notes:**
+- `shiki` renders code to HTML with inline token styles at build time or on language switch. It handles all four languages natively.
+- The `LineHighlightOverlay` is an absolutely positioned `<div>` that spans the highlighted line rows. It uses `line-height` calculations to position correctly and animates with `transition-all duration-150` on line changes.
+- The code display area is scrollable. When the highlighted line changes, the component auto-scrolls to keep the active line vertically centered in the viewport (`scrollIntoView({ block: "center", behavior: "smooth" })`).
+- Long lines do not wrap — horizontal scroll is enabled on the code panel so code structure is never visually broken.
+
+---
+
+### File Organization
+
+Language implementations live alongside their algorithm module under `src/algorithms/`:
+
+```
+src/
+  algorithms/
+    sorting/
+      bubble-sort/
+        index.ts          // AlgorithmModule export + generator
+        code.ts           // codeByLanguage map (all four language strings + lineMaps)
+    searching/
+      binary-search/
+        index.ts
+        code.ts
+    graph/
+      bfs/
+        index.ts
+        code.ts
+    linked-list/
+      singly/
+        index.ts
+        code.ts
+```
+
+The `code.ts` file for each algorithm is a plain data file — no logic, just the four source strings and their line maps. This makes it easy to update or audit language implementations independently from the generator logic.
 
 ---
 

@@ -9,6 +9,8 @@ import type {
   LinkedListModule,
   LinkedListOperation,
   ComplexityRow,
+  SupportedLanguage,
+  CodeEntry,
 } from "@/engine/types";
 import TabBar, { type TabId } from "./TabBar";
 import VisualizerTab from "./VisualizerTab";
@@ -24,10 +26,12 @@ type Props = {
 
 export default function MainPanel({ algorithmId }: Props) {
   const [activeTab, setActiveTab] = useState<TabId>("visualizer");
-  const [highlightedLines, setHighlightedLines] = useState<number[]>([]);
+  const [currentStepLabel, setCurrentStepLabel] = useState<string | undefined>(undefined);
 
   // Dynamic code/complexity — updated by LinkedListVisualizerTab when operation changes
-  const [currentCode, setCurrentCode] = useState<string | undefined>(undefined);
+  const [currentCodeByLanguage, setCurrentCodeByLanguage] = useState<
+    Record<SupportedLanguage, CodeEntry> | undefined
+  >(undefined);
   const [currentComplexity, setCurrentComplexity] = useState<
     ComplexityRow[] | undefined
   >(undefined);
@@ -40,13 +44,13 @@ export default function MainPanel({ algorithmId }: Props) {
   useEffect(() => {
     if (algorithm.category === "linked-list") {
       const ll = algorithm as LinkedListModule;
-      setCurrentCode(ll.codeByOperation["insert"]);
+      setCurrentCodeByLanguage(ll.codeByOperationByLanguage["insert"]);
       setCurrentComplexity(ll.complexityByOperation["insert"]);
     } else {
-      setCurrentCode(undefined);
+      setCurrentCodeByLanguage(undefined);
       setCurrentComplexity(undefined);
     }
-    setHighlightedLines([]);
+    setCurrentStepLabel(undefined);
   }, [algorithm]);
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -54,11 +58,19 @@ export default function MainPanel({ algorithmId }: Props) {
     (op: LinkedListOperation["type"]) => {
       if (algorithm.category === "linked-list") {
         const ll = algorithm as LinkedListModule;
-        setCurrentCode(ll.codeByOperation[op]);
+        setCurrentCodeByLanguage(ll.codeByOperationByLanguage[op]);
         setCurrentComplexity(ll.complexityByOperation[op]);
       }
     },
     [algorithm]
+  );
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const handleStepChange = useCallback(
+    (_lines: number[], stepLabel?: string) => {
+      setCurrentStepLabel(stepLabel);
+    },
+    []
   );
 
   const renderVisualizerTab = () => {
@@ -66,7 +78,7 @@ export default function MainPanel({ algorithmId }: Props) {
       return (
         <LinkedListVisualizerTab
           algorithm={algorithm as LinkedListModule}
-          onHighlightedLinesChange={setHighlightedLines}
+          onHighlightedLinesChange={handleStepChange}
           onOperationChange={handleOperationChange}
         />
       );
@@ -75,7 +87,7 @@ export default function MainPanel({ algorithmId }: Props) {
       return (
         <GraphVisualizerTab
           algorithm={algorithm as GraphModule}
-          onHighlightedLinesChange={setHighlightedLines}
+          onHighlightedLinesChange={handleStepChange}
         />
       );
     }
@@ -83,22 +95,28 @@ export default function MainPanel({ algorithmId }: Props) {
       return (
         <TreeVisualizerTab
           algorithm={algorithm as TreeModule}
-          onHighlightedLinesChange={setHighlightedLines}
+          onHighlightedLinesChange={handleStepChange}
         />
       );
     }
     return (
       <VisualizerTab
         algorithm={algorithm as SortSearchModule}
-        onHighlightedLinesChange={setHighlightedLines}
+        onHighlightedLinesChange={handleStepChange}
       />
     );
   };
 
   const isLinkedList = algorithm.category === "linked-list";
-  const displayCode =
-    currentCode ??
-    (isLinkedList ? "" : (algorithm as SortSearchModule | GraphModule | TreeModule).code);
+  const displayCodeByLanguage: Record<SupportedLanguage, CodeEntry> =
+    currentCodeByLanguage ??
+    (isLinkedList
+      ? (algorithm as LinkedListModule).codeByOperationByLanguage["insert"]
+      : (algorithm as SortSearchModule | GraphModule | TreeModule).codeByLanguage);
+
+  const displayAlternativeByLanguage = isLinkedList
+    ? undefined
+    : (algorithm as SortSearchModule | GraphModule | TreeModule).codeAlternativeByLanguage;
 
   return (
     <div className="flex flex-col h-full">
@@ -110,10 +128,10 @@ export default function MainPanel({ algorithmId }: Props) {
         </div>
         <div className={`h-full ${activeTab === "code" ? "flex flex-col" : "hidden"}`}>
           <CodeTab
-            code={displayCode}
-            highlightedLines={highlightedLines}
-            codeAlternativeLabel={isLinkedList ? undefined : algorithm.codeAlternativeLabel}
-            codeAlternative={isLinkedList ? undefined : algorithm.codeAlternative}
+            codeByLanguage={displayCodeByLanguage}
+            stepLabel={currentStepLabel}
+            codeAlternativeLabel={isLinkedList ? undefined : (algorithm as SortSearchModule).codeAlternativeLabel}
+            codeAlternativeByLanguage={displayAlternativeByLanguage}
           />
         </div>
         <div className={`h-full overflow-auto ${activeTab === "info" ? "block" : "hidden"}`}>

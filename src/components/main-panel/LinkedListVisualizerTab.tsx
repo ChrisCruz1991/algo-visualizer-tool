@@ -16,7 +16,7 @@ import MetricsBar from "@/components/visualizer/MetricsBar";
 
 type Props = {
   algorithm: LinkedListModule;
-  onHighlightedLinesChange?: (lines: number[]) => void;
+  onHighlightedLinesChange?: (lines: number[], stepLabel?: string) => void;
   onOperationChange?: (op: LinkedListOperation["type"]) => void;
 };
 
@@ -102,9 +102,8 @@ export default function LinkedListVisualizerTab({
 
   // ─── Sync highlighted lines to CodeTab ───────────────────────────────────
   useEffect(() => {
-    onHighlightedLinesChange?.(
-      (engine.currentStep as LinkedListStep | null)?.highlightedLines ?? []
-    );
+    const step = engine.currentStep as LinkedListStep | null;
+    onHighlightedLinesChange?.(step?.highlightedLines ?? [], step?.stepLabel);
   }, [engine.currentStep, onHighlightedLinesChange]);
 
   // ─── Notify MainPanel when operation changes (CodeTab/InfoTab update) ─────

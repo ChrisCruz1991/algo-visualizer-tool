@@ -11,7 +11,7 @@ import MetricsBar from "@/components/visualizer/MetricsBar";
 
 type Props = {
   algorithm: GraphModule;
-  onHighlightedLinesChange?: (lines: number[]) => void;
+  onHighlightedLinesChange?: (lines: number[], stepLabel?: string) => void;
 };
 
 export default function GraphVisualizerTab({
@@ -50,7 +50,10 @@ export default function GraphVisualizerTab({
 
   // Sync highlighted lines to parent (for CodeTab)
   useEffect(() => {
-    onHighlightedLinesChange?.(engine.currentStep?.highlightedLines ?? []);
+    onHighlightedLinesChange?.(
+      engine.currentStep?.highlightedLines ?? [],
+      engine.currentStep?.stepLabel
+    );
   }, [engine.currentStep, onHighlightedLinesChange]);
 
   const currentStep = engine.currentStep as GraphStep | null;

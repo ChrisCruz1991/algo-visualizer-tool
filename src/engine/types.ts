@@ -1,5 +1,19 @@
 export type EngineStatus = "idle" | "running" | "paused" | "done";
 
+// --- Multi-language support ---
+
+export type SupportedLanguage = "typescript" | "python" | "java" | "cpp";
+
+export type LineMap = Record<string, number[]>; // stepLabel → line numbers in this language
+
+export type CodeEntry = {
+  code: string;
+  lineCount: number;
+  lineMap: LineMap;
+};
+
+// ---
+
 export type SortStep = {
   type: "sort";
   array: number[];
@@ -7,6 +21,7 @@ export type SortStep = {
   swappingIndices: number[];
   sortedIndices: number[];
   highlightedLines: number[];
+  stepLabel?: string;
   description: string;
   comparisons: number;
   swaps: number;
@@ -20,6 +35,7 @@ export type SearchStep = {
   searchedIndices: number[];
   targetIndex: number | null;
   highlightedLines: number[];
+  stepLabel?: string;
   description: string;
   comparisons: number;
 };
@@ -68,6 +84,7 @@ export type GraphStep = {
   queueOrStack: string[];
   traversedEdges: Array<{ from: string; to: string }>;
   highlightedLines: number[];
+  stepLabel?: string;
   description: string;
   operationCount: number;
 };
@@ -79,6 +96,7 @@ export type TreeStep = {
   enteredNodes: string[]; // entered but not yet processed (amber/dimmed)
   visitOrder: number[];
   highlightedLines: number[];
+  stepLabel?: string;
   description: string;
 };
 
@@ -118,6 +136,7 @@ export type LinkedListStep = {
   deletedNodeId: string | null;
   pointerLabels: Record<string, string | null>; // e.g. { prev: "n1", current: "n2", next: "n3" }
   highlightedLines: number[];
+  stepLabel?: string;
   description: string;
 };
 
@@ -147,10 +166,14 @@ export type SortSearchModule = {
   category: "sorting" | "searching";
   description: AlgorithmInfo;
   complexity: ComplexityRow[];
+  /** @deprecated Use codeByLanguage.typescript.code */
   code: string;
   codeLineCount: number;
+  codeByLanguage: Record<SupportedLanguage, CodeEntry>;
   codeAlternativeLabel?: "Iterative" | "Recursive";
+  /** @deprecated Use codeAlternativeByLanguage */
   codeAlternative?: string;
+  codeAlternativeByLanguage?: Record<SupportedLanguage, CodeEntry>;
   generator: (input: number[], target?: number) => Generator<AlgorithmStep>;
 };
 
@@ -161,10 +184,13 @@ export type GraphModule = {
   presets: PresetGraph[];
   description: AlgorithmInfo;
   complexity: ComplexityRow[];
+  /** @deprecated Use codeByLanguage.typescript.code */
   code: string;
   codeLineCount: number;
+  codeByLanguage: Record<SupportedLanguage, CodeEntry>;
   codeAlternativeLabel?: "Iterative" | "Recursive";
   codeAlternative?: string;
+  codeAlternativeByLanguage?: Record<SupportedLanguage, CodeEntry>;
   generator: (graph: PresetGraph, startNodeId: string) => Generator<GraphStep>;
 };
 
@@ -175,10 +201,13 @@ export type TreeModule = {
   presets: PresetTree[];
   description: AlgorithmInfo;
   complexity: ComplexityRow[];
+  /** @deprecated Use codeByLanguage.typescript.code */
   code: string;
   codeLineCount: number;
+  codeByLanguage: Record<SupportedLanguage, CodeEntry>;
   codeAlternativeLabel?: "Iterative" | "Recursive";
   codeAlternative?: string;
+  codeAlternativeByLanguage?: Record<SupportedLanguage, CodeEntry>;
   generator: (tree: PresetTree) => Generator<TreeStep>;
 };
 
@@ -191,7 +220,9 @@ export type LinkedListModule = {
   description: AlgorithmInfo;
   complexity: ComplexityRow[]; // fallback for InfoTab; per-operation via complexityByOperation
   complexityByOperation: Record<LinkedListOperation["type"], ComplexityRow[]>;
+  /** @deprecated Use codeByOperationByLanguage */
   codeByOperation: Record<LinkedListOperation["type"], string>;
+  codeByOperationByLanguage: Record<LinkedListOperation["type"], Record<SupportedLanguage, CodeEntry>>;
   generatorByOperation: {
     insert: (
       state: LinkedListState,

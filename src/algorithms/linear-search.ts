@@ -10,6 +10,38 @@ const code = `function linearSearch(arr: number[], target: number): number {
   return -1;
 }`;
 
+const codePython = `def linear_search(arr: list[int], target: int) -> int:
+    for i in range(len(arr)):
+        if arr[i] == target:
+            return i
+    return -1`;
+
+const codeJava = `public class LinearSearch {
+    public static int search(int[] arr, int target) {
+        for (int i = 0; i < arr.length; i++) {
+            if (arr[i] == target) {
+                return i;
+            }
+        }
+        return -1;
+    }
+}`;
+
+const codeCpp = `#include <vector>
+using namespace std;
+
+class LinearSearch {
+public:
+    static int search(const vector<int>& arr, int target) {
+        for (int i = 0; i < (int)arr.size(); i++) {
+            if (arr[i] == target) {
+                return i;
+            }
+        }
+        return -1;
+    }
+};`;
+
 function* linearSearchGenerator(
   input: number[],
   target = 0
@@ -29,6 +61,7 @@ function* linearSearchGenerator(
       searchedIndices: [...searched],
       targetIndex,
       highlightedLines: [3],
+      stepLabel: "compare",
       description: `Checking index ${i}: is ${arr[i]} === ${target}?`,
       comparisons,
     };
@@ -42,6 +75,7 @@ function* linearSearchGenerator(
         searchedIndices: [...searched],
         targetIndex,
         highlightedLines: [4],
+        stepLabel: "found",
         description: `Found! ${target} is at index ${i}.`,
         comparisons,
       };
@@ -59,6 +93,7 @@ function* linearSearchGenerator(
     searchedIndices: [...searched],
     targetIndex,
     highlightedLines: [7],
+    stepLabel: "not-found",
     description: `${target} was not found in the array after checking all ${arr.length} elements.`,
     comparisons,
   };
@@ -70,6 +105,44 @@ export const linearSearch: AlgorithmModule = {
   category: "searching",
   code,
   codeLineCount: 8,
+  codeByLanguage: {
+    typescript: {
+      code,
+      lineCount: 8,
+      lineMap: {
+        compare: [3],
+        found: [4],
+        "not-found": [7],
+      },
+    },
+    python: {
+      code: codePython,
+      lineCount: 5,
+      lineMap: {
+        compare: [3],
+        found: [4],
+        "not-found": [5],
+      },
+    },
+    java: {
+      code: codeJava,
+      lineCount: 10,
+      lineMap: {
+        compare: [4],
+        found: [5],
+        "not-found": [8],
+      },
+    },
+    cpp: {
+      code: codeCpp,
+      lineCount: 14,
+      lineMap: {
+        compare: [8],
+        found: [9],
+        "not-found": [12],
+      },
+    },
+  },
   generator: linearSearchGenerator as (
     input: number[],
     target?: number
@@ -104,4 +177,3 @@ export const linearSearch: AlgorithmModule = {
       "Linear Search is O(n) and works on unsorted data — use it when the array is small or unsorted. For sorted arrays, Binary Search is far more efficient at O(log n). For repeated searches on the same data, consider a hash table for O(1) average lookups.",
   },
 };
-

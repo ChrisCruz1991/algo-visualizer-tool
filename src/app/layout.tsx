@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import SidebarWrapper from "@/components/layout/SidebarWrapper";
+import { LanguageProvider } from "@/context/LanguageContext";
 
 export const metadata: Metadata = {
   title: "Algorithm Visualizer",
@@ -16,11 +17,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased bg-gray-50 text-gray-900">
-        <Navbar />
-        <div className="flex h-[calc(100vh-56px)]">
-          <SidebarWrapper />
-          <main className="flex-1 overflow-auto">{children}</main>
-        </div>
+        <LanguageProvider>
+          <Navbar />
+          <div className="flex h-[calc(100vh-56px)]">
+            <SidebarWrapper />
+            <main className="flex-1 overflow-auto">{children}</main>
+          </div>
+        </LanguageProvider>
       </body>
     </html>
   );

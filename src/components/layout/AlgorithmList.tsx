@@ -38,6 +38,14 @@ const ALGORITHM_GROUPS = [
       { id: "postorder", name: "Postorder" },
     ],
   },
+  {
+    category: "Linked Lists",
+    algorithms: [
+      { id: "linked-list-singly", name: "Singly Linked List" },
+      { id: "linked-list-doubly", name: "Doubly Linked List" },
+      { id: "linked-list-circular", name: "Circular Linked List" },
+    ],
+  },
 ];
 
 export default function AlgorithmList({ onNavigate }: { onNavigate?: () => void }) {

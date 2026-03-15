@@ -1,11 +1,13 @@
-import type { AlgorithmModule } from "@/engine/types";
+import type { AlgorithmModule, ComplexityRow } from "@/engine/types";
 
 type Props = {
   algorithm: AlgorithmModule;
+  complexityOverride?: ComplexityRow[];
 };
 
-export default function InfoTab({ algorithm }: Props) {
-  const { description, complexity } = algorithm;
+export default function InfoTab({ algorithm, complexityOverride }: Props) {
+  const { description } = algorithm;
+  const complexity = complexityOverride ?? algorithm.complexity;
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-8">

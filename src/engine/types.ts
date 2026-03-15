@@ -82,7 +82,46 @@ export type TreeStep = {
   description: string;
 };
 
-export type AlgorithmStep = SortStep | SearchStep | GraphStep | TreeStep;
+// --- Linked list primitives ---
+
+export type ListVariant = "singly" | "doubly" | "circular";
+
+export type ListNode = {
+  id: string;
+  value: number;
+  next: string | null;
+  prev: string | null; // null for singly/circular
+};
+
+export type LinkedListState = {
+  nodes: ListNode[];
+  headId: string | null;
+  tailId: string | null;
+  variant: ListVariant;
+};
+
+export type LinkedListOperation =
+  | { type: "insert"; position: "head" | "tail" | "index"; index?: number; value: number }
+  | { type: "delete"; position: "head" | "tail" | "index"; index?: number }
+  | { type: "search"; value: number }
+  | { type: "reverse" };
+
+export type LinkedListStep = {
+  type: "linked-list";
+  nodes: ListNode[];
+  headId: string | null;
+  tailId: string | null;
+  activeNodeId: string | null;
+  targetNodeId: string | null;
+  affectedNodeIds: string[];
+  insertedNodeId: string | null;
+  deletedNodeId: string | null;
+  pointerLabels: Record<string, string | null>; // e.g. { prev: "n1", current: "n2", next: "n3" }
+  highlightedLines: number[];
+  description: string;
+};
+
+export type AlgorithmStep = SortStep | SearchStep | GraphStep | TreeStep | LinkedListStep;
 
 // --- Shared content types ---
 
@@ -110,6 +149,8 @@ export type SortSearchModule = {
   complexity: ComplexityRow[];
   code: string;
   codeLineCount: number;
+  codeAlternativeLabel?: "Iterative" | "Recursive";
+  codeAlternative?: string;
   generator: (input: number[], target?: number) => Generator<AlgorithmStep>;
 };
 
@@ -122,6 +163,8 @@ export type GraphModule = {
   complexity: ComplexityRow[];
   code: string;
   codeLineCount: number;
+  codeAlternativeLabel?: "Iterative" | "Recursive";
+  codeAlternative?: string;
   generator: (graph: PresetGraph, startNodeId: string) => Generator<GraphStep>;
 };
 
@@ -134,7 +177,36 @@ export type TreeModule = {
   complexity: ComplexityRow[];
   code: string;
   codeLineCount: number;
+  codeAlternativeLabel?: "Iterative" | "Recursive";
+  codeAlternative?: string;
   generator: (tree: PresetTree) => Generator<TreeStep>;
 };
 
-export type AlgorithmModule = SortSearchModule | GraphModule | TreeModule;
+export type LinkedListModule = {
+  id: string;
+  name: string;
+  variant: ListVariant;
+  category: "linked-list";
+  presets: { name: string; values: number[] }[];
+  description: AlgorithmInfo;
+  complexity: ComplexityRow[]; // fallback for InfoTab; per-operation via complexityByOperation
+  complexityByOperation: Record<LinkedListOperation["type"], ComplexityRow[]>;
+  codeByOperation: Record<LinkedListOperation["type"], string>;
+  generatorByOperation: {
+    insert: (
+      state: LinkedListState,
+      op: Extract<LinkedListOperation, { type: "insert" }>
+    ) => Generator<LinkedListStep>;
+    delete: (
+      state: LinkedListState,
+      op: Extract<LinkedListOperation, { type: "delete" }>
+    ) => Generator<LinkedListStep>;
+    search: (
+      state: LinkedListState,
+      op: Extract<LinkedListOperation, { type: "search" }>
+    ) => Generator<LinkedListStep>;
+    reverse: (state: LinkedListState) => Generator<LinkedListStep>;
+  };
+};
+
+export type AlgorithmModule = SortSearchModule | GraphModule | TreeModule | LinkedListModule;

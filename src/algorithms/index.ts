@@ -1,4 +1,5 @@
 import type { AlgorithmModule } from "@/engine/types";
+import { singlyLinkedList, doublyLinkedList, circularLinkedList } from "./linked-list";
 import { bubbleSort } from "./bubble-sort";
 import { selectionSort } from "./selection-sort";
 import { insertionSort } from "./insertion-sort";
@@ -27,6 +28,9 @@ const algorithmRegistry: Record<string, AlgorithmModule> = {
   "inorder": inorderTraversal,
   "preorder": preorderTraversal,
   "postorder": postorderTraversal,
+  "linked-list-singly": singlyLinkedList,
+  "linked-list-doubly": doublyLinkedList,
+  "linked-list-circular": circularLinkedList,
 };
 
 export function getAlgorithmById(id: string): AlgorithmModule | undefined {

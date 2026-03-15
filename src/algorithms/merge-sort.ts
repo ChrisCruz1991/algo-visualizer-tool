@@ -167,6 +167,30 @@ export const mergeSort: AlgorithmModule = {
   category: "sorting",
   code,
   codeLineCount: 20,
+  codeAlternativeLabel: "Iterative",
+  codeAlternative: `function mergeSort(arr: number[]): number[] {
+  const n = arr.length;
+  for (let size = 1; size < n; size *= 2) {
+    for (let left = 0; left < n - size; left += size * 2) {
+      const mid = left + size;
+      const right = Math.min(left + size * 2, n);
+      merge(arr, left, mid, right);
+    }
+  }
+  return arr;
+}
+
+function merge(arr: number[], left: number, mid: number, right: number): void {
+  const leftArr = arr.slice(left, mid);
+  const rightArr = arr.slice(mid, right);
+  let i = 0, j = 0, k = left;
+  while (i < leftArr.length && j < rightArr.length) {
+    if (leftArr[i] <= rightArr[j]) arr[k++] = leftArr[i++];
+    else arr[k++] = rightArr[j++];
+  }
+  while (i < leftArr.length) arr[k++] = leftArr[i++];
+  while (j < rightArr.length) arr[k++] = rightArr[j++];
+}`,
   generator: mergeSortGenerator as (input: number[]) => Generator<SortStep>,
   complexity: [
     { case: "Best", time: "O(n log n)", space: "O(n)" },

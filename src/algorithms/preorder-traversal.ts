@@ -95,6 +95,15 @@ export const preorderTraversal: TreeModule = {
   presets: treePresets,
   code,
   codeLineCount: 15,
+  codeAlternativeLabel: "Recursive",
+  codeAlternative: `function preorder(root: TreeNode | null): number[] {
+  if (root === null) return [];
+  return [
+    root.value,
+    ...preorder(root.left ?? null),
+    ...preorder(root.right ?? null),
+  ];
+}`,
   complexity: [
     { case: "Best",    time: "O(N)", space: "O(H)" },
     { case: "Average", time: "O(N)", space: "O(H)" },

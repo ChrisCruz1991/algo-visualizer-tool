@@ -125,6 +125,14 @@ export const binarySearch: AlgorithmModule = {
   category: "searching",
   code,
   codeLineCount: 15,
+  codeAlternativeLabel: "Recursive",
+  codeAlternative: `function binarySearch(arr: number[], target: number, low = 0, high = arr.length - 1): number {
+  if (low > high) return -1;
+  const mid = Math.floor((low + high) / 2);
+  if (arr[mid] === target) return mid;
+  if (arr[mid] < target) return binarySearch(arr, target, mid + 1, high);
+  return binarySearch(arr, target, low, mid - 1);
+}`,
   generator: binarySearchGenerator as (
     input: number[],
     target?: number

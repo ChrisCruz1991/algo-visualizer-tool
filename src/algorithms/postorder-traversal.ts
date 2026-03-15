@@ -133,6 +133,15 @@ export const postorderTraversal: TreeModule = {
   presets: treePresets,
   code,
   codeLineCount: 21,
+  codeAlternativeLabel: "Recursive",
+  codeAlternative: `function postorder(root: TreeNode | null): number[] {
+  if (root === null) return [];
+  return [
+    ...postorder(root.left ?? null),
+    ...postorder(root.right ?? null),
+    root.value,
+  ];
+}`,
   complexity: [
     { case: "Best",    time: "O(N)", space: "O(N)" },
     { case: "Average", time: "O(N)", space: "O(N)" },

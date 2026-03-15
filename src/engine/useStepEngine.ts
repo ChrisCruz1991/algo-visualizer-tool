@@ -8,6 +8,10 @@ import type {
   SortSearchModule,
   GraphModule,
   TreeModule,
+  LinkedListModule,
+  LinkedListOperation,
+  LinkedListState,
+  LinkedListStep,
   PresetGraph,
   PresetTree,
 } from "./types";
@@ -15,7 +19,8 @@ import type {
 export type StepEngineOptions =
   | { category: "sorting" | "searching"; input: number[]; target?: number }
   | { category: "graph"; graph: PresetGraph; startNodeId: string }
-  | { category: "tree"; tree: PresetTree };
+  | { category: "tree"; tree: PresetTree }
+  | { category: "linked-list"; listState: LinkedListState; operation: LinkedListOperation };
 
 export type StepEngineResult = {
   status: EngineStatus;
@@ -51,6 +56,25 @@ function collectSteps(
     gen = (module as TreeModule).generator(
       options.tree
     ) as Generator<AlgorithmStep>;
+  } else if (options.category === "linked-list") {
+    const llModule = module as LinkedListModule;
+    const op = options.operation;
+    let llGen: Generator<LinkedListStep>;
+    if (op.type === "reverse") {
+      llGen = llModule.generatorByOperation.reverse(options.listState);
+    } else if (op.type === "insert") {
+      llGen = llModule.generatorByOperation.insert(options.listState, op);
+    } else if (op.type === "delete") {
+      llGen = llModule.generatorByOperation.delete(options.listState, op);
+    } else {
+      llGen = llModule.generatorByOperation.search(options.listState, op);
+    }
+    let llResult = llGen.next();
+    while (!llResult.done) {
+      steps.push(llResult.value as AlgorithmStep);
+      llResult = llGen.next();
+    }
+    return steps;
   } else {
     throw new Error("Unknown algorithm category");
   }

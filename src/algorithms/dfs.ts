@@ -158,6 +158,24 @@ export const dfs: GraphModule = {
   presets: graphPresets,
   code,
   codeLineCount: 31,
+  codeAlternativeLabel: "Recursive",
+  codeAlternative: `function dfs(graph: Graph, startId: string): string[] {
+  const visited = new Set<string>();
+  const order: string[] = [];
+
+  function explore(nodeId: string) {
+    visited.add(nodeId);
+    order.push(nodeId);
+    for (const neighbor of graph.adjacency[nodeId] ?? []) {
+      if (!visited.has(neighbor)) explore(neighbor);
+    }
+  }
+
+  for (const node of graph.nodes) {
+    if (!visited.has(node.id)) explore(node.id);
+  }
+  return order;
+}`,
   complexity: [
     { case: "Best",    time: "O(V + E)", space: "O(V)" },
     { case: "Average", time: "O(V + E)", space: "O(V)" },

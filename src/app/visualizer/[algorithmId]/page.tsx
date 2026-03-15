@@ -32,5 +32,8 @@ export function generateStaticParams() {
     { algorithmId: "inorder" },
     { algorithmId: "preorder" },
     { algorithmId: "postorder" },
+    { algorithmId: "linked-list-singly" },
+    { algorithmId: "linked-list-doubly" },
+    { algorithmId: "linked-list-circular" },
   ];
 }

@@ -101,6 +101,15 @@ export const inorderTraversal: TreeModule = {
   presets: treePresets,
   code,
   codeLineCount: 21,
+  codeAlternativeLabel: "Recursive",
+  codeAlternative: `function inorder(root: TreeNode | null): number[] {
+  if (root === null) return [];
+  return [
+    ...inorder(root.left ?? null),
+    root.value,
+    ...inorder(root.right ?? null),
+  ];
+}`,
   complexity: [
     { case: "Best",    time: "O(N)", space: "O(H)" },
     { case: "Average", time: "O(N)", space: "O(H)" },

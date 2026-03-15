@@ -148,6 +148,32 @@ export const quickSort: AlgorithmModule = {
   category: "sorting",
   code,
   codeLineCount: 20,
+  codeAlternativeLabel: "Iterative",
+  codeAlternative: `function quickSort(arr: number[]): number[] {
+  const stack: Array<[number, number]> = [[0, arr.length - 1]];
+  while (stack.length > 0) {
+    const [low, high] = stack.pop()!;
+    if (low < high) {
+      const pivotIdx = partition(arr, low, high);
+      stack.push([low, pivotIdx - 1]);
+      stack.push([pivotIdx + 1, high]);
+    }
+  }
+  return arr;
+}
+
+function partition(arr: number[], low: number, high: number): number {
+  const pivot = arr[high];
+  let i = low - 1;
+  for (let j = low; j < high; j++) {
+    if (arr[j] <= pivot) {
+      i++;
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+  }
+  [arr[i + 1], arr[high]] = [arr[high], arr[i + 1]];
+  return i + 1;
+}`,
   generator: quickSortGenerator as (input: number[]) => Generator<SortStep>,
   complexity: [
     { case: "Best", time: "O(n log n)", space: "O(log n)" },

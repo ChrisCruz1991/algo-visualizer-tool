@@ -638,3 +638,379 @@ The queue/stack indicator panel (for BFS/DFS) and visit-order list (for tree tra
 10. Update Sidebar with new category groups and preset selector controls
 11. Populate Info tab content for all 5 new algorithms
 12. Polish: edge traversal animations, backtrack dimming, disconnected-graph DFS restart
+
+---
+
+---
+
+# Scope — v3: Linked List Data Structure
+
+## Overview
+
+v3 introduces the **Linked List** as a fully interactive data structure — not a single algorithm, but a structure with multiple discrete operations that the user selects and executes one at a time. This is a UX paradigm shift from v1/v2: instead of "pick an algorithm, press Run", the user builds and mutates a list step-by-step by choosing operations.
+
+Three list variants are supported, each sharing the same four operation categories:
+
+| Variant | Description |
+|---|---|
+| Singly Linked List | Each node holds a value and a `next` pointer |
+| Doubly Linked List | Each node holds a value, a `next` pointer, and a `prev` pointer |
+| Circular Linked List | Singly linked, but the tail's `next` points back to the head |
+
+---
+
+## Operations (All Three Variants)
+
+| Operation | Variants |
+|---|---|
+| **Insert** — at head, tail, or index | All three |
+| **Delete** — at head, tail, or index | All three |
+| **Search / Traversal** — find a value, animate pointer walk | All three |
+| **Reverse** — reverse the list in-place | All three |
+
+All operations are visualized step-by-step using the same generator-based step engine from v1/v2. Each operation is its own generator that yields a `LinkedListStep` at every meaningful pointer change.
+
+---
+
+## Canvas Design
+
+### Singly Linked List
+
+Nodes are rendered left-to-right as labeled rectangles. Each node has two compartments: the value on the left, and the `next` pointer slot on the right. A right-pointing arrow connects each node's pointer slot to the next node. The tail's pointer slot displays `null`.
+
+```
+┌───┬──┐   ┌───┬──┐   ┌───┬──┐
+│ 3 │ ──→  │ 7 │ ──→  │ 1 │ /│
+└───┴──┘   └───┴──┘   └───┴──┘
+ head                   tail (next = null)
+```
+
+### Doubly Linked List
+
+Same left-to-right layout but each node has three compartments: `prev` pointer on the left, value in the center, `next` pointer on the right. Two rows of arrows are rendered — a forward row (→) and a backward row (←) — to show both directions explicitly.
+
+```
+    ┌──┬───┬──┐   ┌──┬───┬──┐   ┌──┬───┬──┐
+/←  │  │ 3 │ ──→  │  │ 7 │ ──→  │  │ 1 │  │ →null
+    └──┴───┴──┘ ← └──┴───┴──┘ ← └──┴───┴──┘
+  (prev=null)                    (next=null)
+```
+
+### Circular Linked List
+
+Same left-to-right node layout as singly linked. The tail's `next` arrow curves **below** the node row and loops back to the head with an arc, clearly communicating the circular structure. The arc is an SVG `<path>` with a cubic bezier curve and an arrowhead at the head node.
+
+```
+┌───┬──┐   ┌───┬──┐   ┌───┬──┐
+│ 3 │ ──→  │ 7 │ ──→  │ 1 │ ─┐
+└───┴──┘   └───┴──┘   └───┴──┘
+  ↑_________________________________|
+```
+
+---
+
+## Node Color States
+
+| State | Color | When Used |
+|---|---|---|
+| Default | Gray | Resting node |
+| Active / Current | Orange | Pointer is currently here |
+| Target | Blue | Node being searched for / operated on |
+| Inserted | Green | Newly inserted node |
+| Deleted | Red + fade out | Node being removed |
+| Affected | Yellow / Amber | Nodes whose pointers are being rewired |
+
+Pointer arrows animate when being rewired — they fade out from the old target and fade in to the new target using CSS transitions.
+
+---
+
+## Operation Details & Step Models
+
+### Insert
+
+**Sub-operations:** Insert at head, Insert at tail, Insert at index `i`
+
+**Step model — Insert at index `i` (most complex case):**
+1. Create new node (highlight it green, detached above the list)
+2. Traverse from head to node at index `i-1` (pointer walks step-by-step, orange highlight)
+3. Set `newNode.next = current.next` (animate arrow from new node to `i`th node)
+4. Set `current.next = newNode` (animate arrow from `i-1`th node to new node)
+5. For doubly: additionally set `newNode.prev = current` and `newNode.next.prev = newNode`
+6. New node snaps into position in the list row
+
+**Performance:**
+
+| Operation | Time | Space |
+|---|---|---|
+| Insert at head | O(1) | O(1) |
+| Insert at tail | O(N) singly / O(1) with tail pointer | O(1) |
+| Insert at index | O(N) | O(1) |
+
+**Implementation note:** Maintain an explicit `tail` pointer in the list state so tail insertion is O(1) without traversal. Show this in the code and call it out in the Info tab — it's a common interview point.
+
+---
+
+### Delete
+
+**Sub-operations:** Delete at head, Delete at tail, Delete at index `i`
+
+**Step model — Delete at index `i`:**
+1. Traverse from head to node at index `i-1` (pointer walk, orange highlight)
+2. Highlight the target node (index `i`) in red
+3. Set `current.next = target.next` (animate arrow bypassing the target)
+4. For doubly: set `target.next.prev = current`
+5. Target node fades out and is removed from the canvas
+6. For circular: if deleting tail, update `tail.next = head`
+
+**Performance:**
+
+| Operation | Time | Space |
+|---|---|---|
+| Delete at head | O(1) | O(1) |
+| Delete at tail | O(N) singly / O(1) doubly (with `prev`) | O(1) |
+| Delete at index | O(N) | O(1) |
+
+**Implementation note:** Deleting the tail of a singly linked list still requires O(N) traversal to find the second-to-last node (to set its `next = null`). This is a key teaching point — it's one of the concrete advantages of a doubly linked list.
+
+---
+
+### Search / Traversal
+
+**Step model:**
+1. Set pointer to `head`, highlight it orange
+2. Compare current node value to target — if match, turn blue and display "Found at index N"
+3. If no match, advance pointer to `next`, briefly show arrow animation between nodes
+4. Repeat until found or `null` (or back to `head` for circular)
+5. If not found, display "Value not found after traversing N nodes"
+
+**Performance:**
+
+| Case | Time | Space |
+|---|---|---|
+| Best (head) | O(1) | O(1) |
+| Average / Worst | O(N) | O(1) |
+
+**Implementation note:** For circular lists, the traversal termination condition is `current.next === head`, not `current.next === null`. The generator must handle this difference explicitly, and the step description should call it out: _"Circular list — stopping when we return to head."_
+
+---
+
+### Reverse
+
+**Step model (singly linked list — iterative three-pointer approach):**
+1. Initialize `prev = null`, `current = head`, `next = null` — show all three pointer labels on canvas
+2. Each step: set `next = current.next`, then `current.next = prev`
+3. Animate the arrow on `current` flipping direction (rotate/redraw from right-pointing to left-pointing)
+4. Advance `prev = current`, `current = next`
+5. Repeat until `current === null`
+6. Set `head = prev` — animate head label moving to the new first node
+
+**For doubly linked list:** Swap `next` and `prev` on every node instead of just reversing `next`. Each step shows both arrows being swapped simultaneously.
+
+**For circular linked list:** Same three-pointer logic as singly, but re-link `tail.next = head` (new head) at the end.
+
+**Performance:**
+
+| Case | Time | Space |
+|---|---|---|
+| All | O(N) | O(1) |
+
+**Implementation note:** The three-pointer reverse is the canonical O(1)-space approach. Highlight it in the Info tab because students often first think of a stack-based O(N) space solution. The animation of the arrow literally flipping direction makes the pointer manipulation intuitive in a way that pseudocode alone cannot achieve.
+
+---
+
+## Input Model
+
+### Manual Input
+
+- A text field accepts comma-separated integers: `3, 7, 1, 9, 4`
+- Values are parsed and the list is built and rendered immediately as a static visualization
+- Maximum list length: **12 nodes** (beyond this the canvas becomes unreadable at standard viewport widths)
+- An error message is shown for invalid input (non-integers, empty values)
+
+### Presets
+
+Preset lists are curated to demonstrate each operation clearly:
+
+| Preset Name | Values | Good for |
+|---|---|---|
+| Short list | `[3, 7, 1]` | Quick insert/delete demos |
+| Medium list | `[5, 2, 8, 4, 9, 1]` | Traversal, reverse |
+| Already sorted | `[1, 3, 5, 7, 9]` | Search best/worst case |
+| Single node | `[42]` | Edge case: delete head = empty list |
+| Two nodes | `[1, 2]` | Edge case: reverse, delete tail |
+
+---
+
+## Controls Bar (Linked List)
+
+The controls bar for linked lists is significantly different from v1/v2. It combines list-building controls with operation selection:
+
+| Control | Description |
+|---|---|
+| List Type Selector | Toggle: `Singly` / `Doubly` / `Circular` |
+| Input Mode Toggle | `Manual Input` or `Preset` |
+| Value Input / Preset Dropdown | Shown based on input mode |
+| Operation Selector | Dropdown: `Insert` / `Delete` / `Search` / `Reverse` |
+| Sub-operation Selector | Shown for Insert/Delete: `At Head` / `At Tail` / `At Index` |
+| Index Input | Shown when "At Index" is selected; integer field |
+| Value Input (operation) | Shown for Insert and Search; the value to insert or find |
+| Speed Slider | Same as v1/v2 |
+| Run / Pause / Step / Reset | Same behavior as v1/v2 |
+
+**UX note:** The controls bar should update contextually — sub-operation fields appear/disappear based on the selected operation. This keeps the UI uncluttered and avoids presenting irrelevant fields.
+
+---
+
+## `LinkedListModule` Type
+
+```typescript
+type ListVariant = "singly" | "doubly" | "circular";
+
+type ListNode = {
+  id: string;
+  value: number;
+  next: string | null;  // ID of next node, or null
+  prev: string | null;  // ID of prev node (doubly only), or null
+};
+
+type LinkedListState = {
+  nodes: ListNode[];
+  headId: string | null;
+  tailId: string | null;
+  variant: ListVariant;
+};
+
+type LinkedListOperation =
+  | { type: "insert"; position: "head" | "tail" | "index"; index?: number; value: number }
+  | { type: "delete"; position: "head" | "tail" | "index"; index?: number }
+  | { type: "search"; value: number }
+  | { type: "reverse" };
+
+type LinkedListStep = {
+  nodes: ListNode[];              // Full current node list (immutable snapshot)
+  headId: string | null;
+  tailId: string | null;
+  activeNodeId: string | null;   // Currently visited pointer position
+  targetNodeId: string | null;   // Node being inserted/deleted/found
+  affectedNodeIds: string[];     // Nodes whose pointers are being rewired
+  insertedNodeId: string | null; // Newly created node (green)
+  deletedNodeId: string | null;  // Node being removed (red, fading)
+  pointerLabels: {               // Named pointer positions (e.g. prev/current/next for reverse)
+    [label: string]: string | null;
+  };
+  highlightedLines: number[];
+  description: string;
+};
+
+type LinkedListModule = {
+  id: string;                    // e.g. "linked-list-singly"
+  name: string;                  // e.g. "Singly Linked List"
+  variant: ListVariant;
+  category: "linked-list";
+  presets: { name: string; values: number[] }[];
+  operations: LinkedListOperation["type"][];
+  description: AlgorithmInfo;
+  complexityByOperation: Record<string, ComplexityTable>;
+  codeByOperation: Record<LinkedListOperation["type"], string>;
+  generatorByOperation: {
+    insert: (state: LinkedListState, op: Extract<LinkedListOperation, { type: "insert" }>) => Generator<LinkedListStep>;
+    delete: (state: LinkedListState, op: Extract<LinkedListOperation, { type: "delete" }>) => Generator<LinkedListStep>;
+    search: (state: LinkedListState, op: Extract<LinkedListOperation, { type: "search" }>) => Generator<LinkedListStep>;
+    reverse: (state: LinkedListState) => Generator<LinkedListStep>;
+  };
+};
+```
+
+**Key design decision:** `codeByOperation` and `complexityByOperation` are keyed by operation so the Code tab and Info tab update to show the relevant code and Big-O table when the user selects a different operation — not just when they select a different list type.
+
+---
+
+## Updated Sidebar (v3)
+
+```
+Sorting
+  Bubble Sort
+  Selection Sort
+  Insertion Sort
+  Merge Sort
+  Quick Sort
+  Heap Sort
+
+Searching
+  Linear Search
+  Binary Search
+
+Graph Traversal
+  BFS
+  DFS
+
+Tree Traversal
+  Inorder
+  Preorder
+  Postorder
+
+Linked Lists              ← NEW
+  Singly Linked List
+  Doubly Linked List
+  Circular Linked List
+```
+
+---
+
+## Updated Component Tree (v3)
+
+```
+<Layout>
+  <Navbar />
+  <Sidebar>
+    <AlgorithmList />     // now includes Linked Lists group
+  </Sidebar>
+  <MainPanel>
+    <TabBar />
+    <VisualizerTab>
+      <LinkedListControlsBar />   // list type, operation selector, sub-op, value/index inputs
+      <LinkedListCanvas />        // SinglyCanvas | DoublyCanvas | CircularCanvas
+      <PointerLabelOverlay />     // named pointer labels (prev / current / next) for reverse
+      <StepDescriptionBar />
+      <MetricsBar />              // nodes visited, pointer rewires, steps elapsed
+    </VisualizerTab>
+    <CodeTab>
+      <CodeViewer />              // updates based on selected operation, not just list type
+    </CodeTab>
+    <InfoTab>
+      <AlgorithmInfo />           // Info + complexity table updates per selected operation
+    </InfoTab>
+  </MainPanel>
+</Layout>
+```
+
+---
+
+## v3 Engineering Constraints & Notes
+
+- **State is immutable per step.** Each `LinkedListStep` must be a deep snapshot of the full node list, not a reference. Mutating the live list state between steps will corrupt the step history and break pause/step-back behavior.
+- **The Code tab must update when the operation changes.** `codeByOperation` makes this straightforward — the `CodeViewer` receives the currently selected operation as a prop and renders the corresponding string.
+- **Circular list SVG arc.** The wrap-around arrow for circular lists is an SVG `<path>` using a cubic bezier (`C` command) that dips below the node row. Compute the arc's control points based on the total canvas width so it scales correctly when the list length changes.
+- **Doubly linked list arrow layering.** Forward (→) and backward (←) arrows must be offset vertically (forward arrows slightly above center, backward arrows slightly below) so they don't overlap. Use SVG `marker-end` for arrowheads.
+- **Maximum 12 nodes enforced at the UI layer.** If the user manually enters more than 12 values, trim the list and display a warning. This is a canvas readability constraint, not a data model constraint.
+- **Pointer labels for Reverse.** The three-pointer reverse (`prev`, `current`, `next`) must render as floating labels above the relevant nodes at each step. These are driven by `pointerLabels` in the step state and rendered by `PointerLabelOverlay`.
+- **Empty list edge case.** All operations must handle an empty list gracefully. Inserting into an empty list should animate the node appearing from nothing and setting `head = tail = newNode`. Deleting from a single-node list should animate the node fading out and display "List is now empty."
+
+---
+
+## v3 Suggested Development Order
+
+1. Design `LinkedListState` and `LinkedListStep` types; write test fixtures for all three variants
+2. Build `SinglyCanvas` SVG component with static rendering (nodes + arrows, no animation)
+3. Implement Insert generator for singly linked list (head, tail, index); wire to canvas
+4. Build `LinkedListControlsBar` with contextual field visibility logic
+5. Implement Delete generator for singly linked list
+6. Implement Search / Traversal generator for singly linked list
+7. Implement Reverse generator for singly linked list; add `PointerLabelOverlay`
+8. Extend canvas to `DoublyCanvas` — add `prev` arrows, bidirectional layout
+9. Adapt all four operation generators for doubly variant (add `prev` pointer rewiring steps)
+10. Build `CircularCanvas` — add bezier wrap-around arc for tail → head arrow
+11. Adapt all four operation generators for circular variant (termination condition, tail rewiring)
+12. Wire `codeByOperation` and `complexityByOperation` to Code tab and Info tab
+13. Populate Info tab content for all three variants and all four operations
+14. Polish: node insert/delete animations, arrow flip animation for reverse, empty list edge cases

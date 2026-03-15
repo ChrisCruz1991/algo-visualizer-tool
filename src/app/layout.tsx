@@ -21,7 +21,7 @@ export default function RootLayout({
           <Navbar />
           <div className="flex h-[calc(100vh-56px)]">
             <SidebarWrapper />
-            <main className="flex-1 overflow-auto">{children}</main>
+            <main className="flex-1 overflow-hidden">{children}</main>
           </div>
         </LanguageProvider>
       </body>

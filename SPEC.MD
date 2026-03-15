@@ -45,18 +45,26 @@ A web application designed to help computer science students learn and understan
 ### Global Layout
 
 ```
-+--------------------------------------------------+
-|  Navbar: Logo | Algorithm Visualizer             |
-+--------------------------------------------------+
-|  Sidebar         |  Main Content Area            |
-|  (Algorithm      |                               |
-|   Selection)     |  [Visualizer / Info Panel]    |
-+--------------------------------------------------+
++--------------------------------------------------------------------------+
+|  Navbar: Logo | Algorithm Visualizer                                     |
++--------------------------------------------------------------------------+
+|  Sidebar        |  Left Panel (Visualizer)  |  Right Panel              |
+|  (Algorithm     |                           |  ┌──────────┬──────────┐  |
+|   Selection)    |  [Controls Bar]           |  │   Code   │   Info   │  |
+|                 |  [Canvas]                 |  ├──────────┴──────────┤  |
+|                 |  [Step Description]       |  │  [Language Selector] │  |
+|                 |  [Metrics Bar]            |  │  [Iterative|Recurs.] │  |
+|                 |                           |  │  [Code Viewer]       │  |
+|                 |                           |  └──────────────────────┘  |
++--------------------------------------------------------------------------+
 ```
 
-The layout is a two-column design:
-- **Left sidebar:** Algorithm category list and selection
-- **Main area:** Tabbed panel with Visualizer, Code, and Info tabs
+This is a **three-column design:**
+- **Left sidebar (fixed width ~220px):** Algorithm category list and selection
+- **Left main panel (flexible, ~55% of remaining width):** The visualizer — always visible and always running. Never hidden behind a tab.
+- **Right panel (flexible, ~45% of remaining width):** Tabbed between **Code** and **Info**. The Code tab includes language and implementation variant selectors.
+
+The core design principle is that the visualizer and the code are **always visible simultaneously.** When the user presses Run, they see the animation on the left and the highlighted code on the right at the same time — no switching required.
 
 ---
 
@@ -71,15 +79,11 @@ The layout is a two-column design:
 
 ---
 
-### 2. Main Panel — Tabs
+### 2. Left Panel — Visualizer (Always Visible)
 
-Each selected algorithm has three tabs:
+The visualizer panel is **permanently visible** on the left side of the main content area. It is never behind a tab and is never hidden. This panel contains everything needed to run and observe an algorithm in real time.
 
-#### Tab 1: Visualizer
-
-This is the primary interactive panel.
-
-**Controls Bar (top)**
+**Controls Bar (top of left panel)**
 
 | Control | Description |
 |---|---|
@@ -118,31 +122,48 @@ Live counters displayed during execution:
 
 ---
 
-#### Tab 2: Code
+### 3. Right Panel — Code & Info Tabs
 
-- Displays the full algorithm implementation in the **currently selected language** (TypeScript, Python, Java, or C++)
-- A **language selector** (tab strip or dropdown) sits at the top of the Code panel, allowing the user to switch languages at any time — including mid-visualization
-- A highlighted line (yellow background) tracks which line corresponds to the current execution step, and updates correctly across all languages
-- Code highlighting is driven by the same step-engine that powers the visualizer — they are always in sync regardless of language
-- Syntax highlighting via `shiki` (preferred — supports all four target languages with fine-grained token control)
-- Code is read-only and non-editable
-- Line numbers are displayed and always visible so the highlight indicator is unambiguous
+The right panel is tabbed between two views: **Code** and **Info**. Both tabs are always accessible regardless of whether the visualizer is running, paused, or idle.
+
+#### Right Tab 1: Code
+
+This tab displays the algorithm implementation and stays in sync with the running visualization at all times.
+
+**Sub-controls bar (top of Code tab)**
+
+| Control | Description |
+|---|---|
+| Language Selector | Tab strip: `TypeScript` \| `Python` \| `Java` \| `C++` |
+| Implementation Toggle | Toggle: `Iterative` \| `Recursive` |
 
 **Language selector behavior:**
-- Switching language during a paused visualization immediately re-renders the code in the new language and re-applies the current highlighted line
+- Switching language during a paused visualization immediately re-renders the code and re-applies the current highlighted line
 - Switching language during live playback re-renders without interrupting the animation
 - The selected language persists across algorithm selections for the session (stored in React context or `localStorage`)
 
----
+**Implementation toggle behavior:**
+- Not all algorithms have both variants — the toggle is disabled (grayed out) when only one implementation is available
+- Switching between Iterative and Recursive resets the visualization and loads the appropriate generator
+- The active implementation is reflected in both the code display and the running visualizer — they are always the same variant
+- See the Iterative vs Recursive section below for which algorithms support both
 
-#### Tab 3: Info
+**Code display:**
+- A highlighted line (yellow background) tracks which line corresponds to the current execution step in real time
+- Code highlighting is driven by the same step-engine that powers the left panel visualizer — they are always in sync
+- Syntax highlighting via `shiki`
+- Line numbers always visible
+- Code is read-only and non-editable
+- Auto-scrolls to keep the active highlighted line vertically centered as execution advances
 
-Structured educational content for the selected algorithm, divided into sections:
+#### Right Tab 2: Info
+
+Structured educational content for the selected algorithm:
 
 1. **What is it?** — Plain-language description of the algorithm
 2. **How it works** — Step-by-step conceptual explanation (not code)
 3. **How to implement** — Key implementation decisions and patterns (e.g. partitioning strategy for Quick Sort)
-4. **Time & Space Complexity** — Big-O table:
+4. **Time & Space Complexity** — Big-O table per implementation variant (iterative vs recursive where both exist):
 
 | Case | Time Complexity | Space Complexity |
 |---|---|---|
@@ -150,8 +171,48 @@ Structured educational content for the selected algorithm, divided into sections
 | Average | O(...) | O(...) |
 | Worst | O(...) | O(...) |
 
-5. **Real-world use cases** — Practical contexts where this algorithm is used (e.g. Merge Sort in external sorting, Binary Search in database indexing)
-6. **Comparison note** — Brief note on when to prefer this algorithm vs alternatives
+5. **Real-world use cases** — Practical contexts where this algorithm is used
+6. **Comparison note** — When to prefer this algorithm vs alternatives
+
+---
+
+## Iterative vs Recursive Implementations
+
+Every algorithm that has a meaningful recursive formulation ships with both an iterative and a recursive implementation. The `Implementation Toggle` in the Code tab switches between them. The generator for each variant is separate.
+
+### Availability by Algorithm
+
+| Algorithm | Iterative | Recursive | Notes |
+|---|---|---|---|
+| Bubble Sort | ✅ | ❌ | No natural recursive form worth teaching |
+| Selection Sort | ✅ | ✅ | Recursive version selects min, recurses on tail |
+| Insertion Sort | ✅ | ✅ | Recursive version inserts last element, recurses |
+| Merge Sort | ✅ | ✅ | Canonical recursive; iterative (bottom-up) also important |
+| Quick Sort | ✅ | ✅ | Canonical recursive; iterative uses explicit stack |
+| Heap Sort | ✅ | ❌ | Heapify is inherently iterative in practice |
+| Linear Search | ✅ | ✅ | Simple tail-recursive form |
+| Binary Search | ✅ | ✅ | Both are standard and commonly taught |
+| BFS | ✅ | ❌ | Queue-based by definition; recursion not practical |
+| DFS | ✅ | ✅ | Recursive is the natural form; iterative uses explicit stack |
+| Inorder Traversal | ✅ | ✅ | Both are standard |
+| Preorder Traversal | ✅ | ✅ | Both are standard |
+| Postorder Traversal | ✅ | ✅ | Both are standard |
+| Linked List — Reverse | ✅ | ✅ | Recursive reverse is a classic interview problem |
+| Linked List — Search | ✅ | ✅ | Simple recursive traversal |
+| Linked List — Insert | ✅ | ❌ | Recursion adds no clarity here |
+| Linked List — Delete | ✅ | ❌ | Recursion adds no clarity here |
+
+**Toggle disabled** for algorithms marked ❌ — the toggle renders but is grayed out with a tooltip: _"Only one implementation available for this algorithm."_
+
+### Complexity Differences Surfaced in the Info Tab
+
+Where iterative and recursive variants have meaningfully different space complexity (e.g. recursive Binary Search uses O(log N) stack space vs O(1) for iterative), the Info tab's complexity table shows **both rows** clearly labeled. This is an important teaching point — recursion has a hidden space cost that students often miss.
+
+```
+Binary Search — Space Complexity
+  Iterative:  O(1)
+  Recursive:  O(log N)  ← call stack depth
+```
 
 ---
 
@@ -195,23 +256,31 @@ Each algorithm module exports a consistent shape:
 ```typescript
 type SupportedLanguage = "typescript" | "python" | "java" | "cpp";
 
+type ImplementationVariant = "iterative" | "recursive";
+
 type CodeEntry = {
   code: string;          // Full source string for display
   lineCount: number;     // Total number of lines (for scroll height calculation)
+  lineMap: LineMap;      // stepLabel → line numbers for this language
+};
+
+type VariantModule = {
+  available: boolean;    // false = toggle is disabled for this variant
+  generator: (...args: any[]) => Generator<any>;
+  codeByLanguage: Record<SupportedLanguage, CodeEntry>;
 };
 
 type AlgorithmModule = {
-  id: string;                   // e.g. "bubble-sort"
-  name: string;                 // e.g. "Bubble Sort"
+  id: string;                          // e.g. "bubble-sort"
+  name: string;                        // e.g. "Bubble Sort"
   category: "sorting" | "searching";
-  description: AlgorithmInfo;   // Info tab content
-  complexity: ComplexityTable;  // Big-O table data
-  codeByLanguage: Record<SupportedLanguage, CodeEntry>;  // One entry per language
-  generator: (input: number[], target?: number) => Generator<SortStep | SearchStep>;
+  description: AlgorithmInfo;          // Info tab content
+  complexityByVariant: Record<ImplementationVariant, ComplexityTable | null>;
+  variants: Record<ImplementationVariant, VariantModule>;
 };
 ```
 
-The generator always runs in TypeScript (it drives the visualizer engine). The `codeByLanguage` map is purely for display — the step engine's `highlightedLines` values must be kept in sync with each language's line numbering separately (see Multi-Language Code Display section).
+The `complexityByVariant` field allows the Info tab to show distinct Big-O tables for iterative vs recursive (important for space complexity differences like O(1) vs O(log N) on Binary Search). A `null` entry means that variant is unavailable for this algorithm.
 
 All algorithms live under `src/algorithms/` with one file per algorithm.
 
@@ -234,23 +303,29 @@ The `algorithmId` param drives which module is loaded and which sidebar item is 
 <Layout>
   <Navbar />
   <Sidebar>
-    <AlgorithmList />          // grouped by category
+    <AlgorithmList />              // grouped by category
   </Sidebar>
-  <MainPanel>
-    <TabBar />                 // Visualizer | Code | Info
-    <VisualizerTab>
-      <ControlsBar />
-      <VisualizationCanvas />  // SortingCanvas or SearchingCanvas
-      <StepDescriptionBar />
-      <MetricsBar />
-    </VisualizerTab>
+
+  <LeftPanel>                      // always visible, never tabbed
+    <ControlsBar />
+    <VisualizationCanvas />        // SortingCanvas or SearchingCanvas
+    <StepDescriptionBar />
+    <MetricsBar />
+  </LeftPanel>
+
+  <RightPanel>
+    <RightTabBar />                // Code | Info
     <CodeTab>
-      <CodeViewer />           // syntax-highlighted, line-highlighted
+      <CodeSubControls>
+        <LanguageSelector />       // TypeScript | Python | Java | C++
+        <ImplementationToggle />   // Iterative | Recursive
+      </CodeSubControls>
+      <CodeViewer />               // syntax-highlighted, line-highlighted, auto-scrolling
     </CodeTab>
     <InfoTab>
-      <AlgorithmInfo />        // description, complexity table, use cases
+      <AlgorithmInfo />            // description, complexity table, use cases
     </InfoTab>
-  </MainPanel>
+  </RightPanel>
 </Layout>
 ```
 
@@ -258,22 +333,29 @@ The `algorithmId` param drives which module is loaded and which sidebar item is 
 
 ## UX & Interaction Notes
 
-- Selecting a new algorithm while a visualization is running should **auto-reset** the current run
+- The visualizer (left panel) and code (right panel) are **always visible simultaneously** — there is no state where one is hidden while the other is active
+- Selecting a new algorithm while a visualization is running should **auto-reset** the current run and reload both panels
+- Switching the **Implementation Toggle** (Iterative ↔ Recursive) also resets the visualization — the two variants are separate generators and cannot be swapped mid-run
 - The **Run** button is disabled while an animation is in progress; it becomes re-enabled after completion or reset
 - **Step Forward** is only active when paused — it is grayed out during live playback
-- On mobile, the sidebar collapses into a top dropdown or drawer
-- Tailwind `transition-all duration-200` used on bar color changes for smooth visual feedback
-- The visualizer should be responsive down to tablet width (768px); full desktop layout is the primary target
+- The right panel's Code tab **auto-scrolls** to keep the active highlighted line vertically centered as the animation advances — the user should never need to scroll manually during playback
+- On tablet (768px–1024px), the sidebar collapses into a top dropdown or icon drawer to preserve horizontal space for the two main panels
+- On mobile (< 768px), the layout stacks vertically: visualizer on top, right panel below; the sidebar becomes a fullscreen drawer
+- Tailwind `transition-all duration-200` used on bar color changes and line highlight position for smooth visual feedback
+- The left/right panel split uses a **resizable divider** — the user can drag to give more space to either the visualizer or the code viewer. Default split is 55% / 45%.
 
 ---
 
 ## Known Constraints & Engineering Notes
 
 - **Generator-based engine is mandatory.** Running the actual sort/search algorithm directly provides no opportunity for step-level animation. Every algorithm must be re-implemented as a generator.
-- **Code line highlighting requires manual mapping.** For each `yield` in the generator, the corresponding line numbers in the display code string must be recorded. This is a manual but one-time effort per algorithm.
+- **Iterative and recursive variants are separate generators.** They cannot share a single generator — the execution path is fundamentally different. Each variant has its own `stepLabel` → line number mapping per language.
+- **Switching implementation variant resets the visualization.** Swapping mid-run would require replaying history in the new generator, which is not worth the complexity. Always reset on toggle.
+- **Code line highlighting requires manual mapping.** For each `stepLabel` in the generator, the corresponding line numbers in each language's display string must be recorded. This is a manual but one-time effort per algorithm per language per variant.
 - **Live benchmark timings are misleading at small sizes.** Do not display `ms` execution time for arrays under ~1,000 elements. The Big-O table is sufficient for v1.
 - **Binary Search requires a sorted input.** The UI should auto-sort the input array before running Binary Search and display a notice: _"Binary Search requires a sorted array. Input has been sorted."_
 - **Speed slider lower bound.** Set minimum animation speed at 50ms per step to prevent rendering from being skipped by the browser.
+- **Resizable panel divider.** Use a CSS `grid` layout with a drag handle on the column separator. Store the user's preferred split ratio in `localStorage` so it persists across sessions.
 
 ---
 

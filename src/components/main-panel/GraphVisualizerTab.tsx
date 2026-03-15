@@ -12,6 +12,7 @@ import MetricsBar from "@/components/visualizer/MetricsBar";
 type Props = {
   algorithm: GraphModule;
   onHighlightedLinesChange?: (lines: number[], stepLabel?: string) => void;
+  useAlternative?: boolean;
 };
 
 export default function GraphVisualizerTab({

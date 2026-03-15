@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-export type TabId = "visualizer" | "code" | "info";
+export type TabId = "code" | "info";
 
 type Props = {
   activeTab: TabId;
@@ -8,7 +8,6 @@ type Props = {
 };
 
 const TABS: { id: TabId; label: string }[] = [
-  { id: "visualizer", label: "Visualizer" },
   { id: "code", label: "Code" },
   { id: "info", label: "Info" },
 ];

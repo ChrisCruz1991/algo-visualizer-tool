@@ -346,6 +346,11 @@ export const binarySearch: AlgorithmModule = {
     { case: "Average", time: "O(log n)", space: "O(1)" },
     { case: "Worst", time: "O(log n)", space: "O(1)" },
   ],
+  complexityAlternative: [
+    { case: "Best", time: "O(1)", space: "O(log n)" },
+    { case: "Average", time: "O(log n)", space: "O(log n)" },
+    { case: "Worst", time: "O(log n)", space: "O(log n)" },
+  ],
   description: {
     what: "Binary Search efficiently finds a target value in a sorted array by repeatedly halving the search space. It compares the target to the middle element and discards the half that cannot contain the target.",
     how: [

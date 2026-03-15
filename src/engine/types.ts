@@ -166,6 +166,8 @@ export type SortSearchModule = {
   category: "sorting" | "searching";
   description: AlgorithmInfo;
   complexity: ComplexityRow[];
+  /** Complexity for the alternative (e.g. Recursive) variant when it meaningfully differs */
+  complexityAlternative?: ComplexityRow[];
   /** @deprecated Use codeByLanguage.typescript.code */
   code: string;
   codeLineCount: number;

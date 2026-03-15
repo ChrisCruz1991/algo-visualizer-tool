@@ -12,6 +12,7 @@ import MetricsBar from "@/components/visualizer/MetricsBar";
 type Props = {
   algorithm: TreeModule;
   onHighlightedLinesChange?: (lines: number[], stepLabel?: string) => void;
+  useAlternative?: boolean;
 };
 
 const TRAVERSAL_LABELS: Record<string, string> = {

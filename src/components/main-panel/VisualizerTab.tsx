@@ -12,9 +12,11 @@ import MetricsBar from "@/components/visualizer/MetricsBar";
 type Props = {
   algorithm: SortSearchModule;
   onHighlightedLinesChange?: (lines: number[], stepLabel?: string) => void;
+  /** When true, display matches the alternative (e.g. Recursive) code variant; resets engine */
+  useAlternative?: boolean;
 };
 
-export default function VisualizerTab({ algorithm, onHighlightedLinesChange }: Props) {
+export default function VisualizerTab({ algorithm, onHighlightedLinesChange, useAlternative }: Props) {
   const [inputMode, setInputMode] = useState<"manual" | "random">("random");
   const [manualInput, setManualInput] = useState("5, 3, 8, 1, 9, 2, 7, 4");
   const [arraySize, setArraySize] = useState(20);
@@ -53,6 +55,12 @@ export default function VisualizerTab({ algorithm, onHighlightedLinesChange }: P
   );
 
   const engine = useStepEngine(algorithm, engineOptions);
+
+  // Reset when the Iterative/Recursive variant is switched
+  useEffect(() => {
+    engine.reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [useAlternative]);
 
   // Sync highlighted lines to parent (for CodeTab)
   useEffect(() => {
